@@ -20,7 +20,7 @@ CHOWN=("/usr/sbin/chown")
 CHGRP=("/usr/bin/chgrp")
 USER="$(chomp "$(id -un)")"
 export USER
-CONFIG="/Users/$USER/.config/rlnixpkgs"
+CONFIG="/Users/$USER/.config/mrnixpkgs"
 GROUP="admin"
 TOUCH=("/usr/bin/touch")
 
@@ -190,35 +190,9 @@ cd $MR_CHECKOUT
 mkdir -p "/Users/$USER/.config/zsh/config.d/"
 cp "config/p10k.zsh" "/Users/$USER/.config/zsh/config.d/"
 
-if [[ -e "$CONFIG" ]]
-then
-    ohai "Read state from disk"
-    source "$CONFIG"
-else
-    USERFULLNAME=""
-    USEREMAIL=""
-fi
-
 ohai "Change config to current user $USER"
 sed -i -- "s/USERNAME/$USER/" flake.nix
 sed -i -- "s/USERNAME/$USER/" darwin-configuration.nix
-
-if ! [[ -n $USERFULLNAME ]]
-then
-    ohai "Enter your name (Firstname Lastname):"
-    read USERFULLNAME
-fi
-sed -i -- "s/USERFULLNAME/$USERFULLNAME/" home-manager/modules/git.nix
-
-if ! [[ -n $USEREMAIL ]]
-then
-    ohai "Enter your company email address:"
-    read USEREMAIL
-fi
-sed -i -- "s/USEREMAIL/$USEREMAIL/" home-manager/modules/git.nix
-
-echo "USERFULLNAME=\"$USERFULLNAME\"" > $CONFIG
-echo "USEREMAIL=\"$USEREMAIL\"" >> $CONFIG
 
 if ! [[ -x "$(command -v nix-env)" ]]
 then
