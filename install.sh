@@ -10,8 +10,8 @@ chomp() {
   printf "%s" "${1/"$'\n'"/}"
 }
 
-RL_CHECKOUT=/opt/nixpkgs
-RL_REPO=https://github.com/risclog-solution/macos-nix-setup.git
+MR_CHECKOUT=/opt/nixpkgs
+MR_REPO=https://github.com/ErikMikkelson/macos-nix-setup.git
 CHMOD=("/bin/chmod")
 MKDIR=("/bin/mkdir" "-p")
 STAT_PRINTF=("stat" "-f")
@@ -173,25 +173,22 @@ then
   execute_sudo "/usr/bin/xcode-select" "--switch" "/Library/Developer/CommandLineTools"
 fi
 
-if [ -d "$RL_CHECKOUT" ]
+if [ -d "$MR_CHECKOUT" ]
 then
-    ohai "Checkout dir $RL_CHECKOUT already exists. Updating."
-    cd $RL_CHECKOUT && git checkout -- . && git pull
+    ohai "Checkout dir $MR_CHECKOUT already exists. Updating."
+    cd $MR_CHECKOUT && git checkout -- . && git pull
 else
-  ohai "Checkout dir $RL_CHECKOUT does not exist. Creating."
-  execute_sudo "${MKDIR[@]}" "${RL_CHECKOUT}"
-  execute_sudo "${CHOWN[@]}" "-R" "${USER}:${GROUP}" "${RL_CHECKOUT}"
-  ohai "Cloning repository ${RL_REPO} into ${RL_CHECKOUT}:"
-  git clone ${RL_REPO} ${RL_CHECKOUT}
+  ohai "Checkout dir $MR_CHECKOUT does not exist. Creating."
+  execute_sudo "${MKDIR[@]}" "${MR_CHECKOUT}"
+  execute_sudo "${CHOWN[@]}" "-R" "${USER}:${GROUP}" "${MR_CHECKOUT}"
+  ohai "Cloning repository ${MR_REPO} into ${MR_CHECKOUT}:"
+  git clone ${MR_REPO} ${MR_CHECKOUT}
 fi
 
-cd $RL_CHECKOUT
+cd $MR_CHECKOUT
 
 mkdir -p "/Users/$USER/.config/zsh/config.d/"
 cp "config/p10k.zsh" "/Users/$USER/.config/zsh/config.d/"
-cp "config/ackrc" "/Users/$USER/.ackrc"
-cp "config/vimrc" "/Users/$USER/.vimrc"
-git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
 
 if [[ -e "$CONFIG" ]]
 then
@@ -200,8 +197,6 @@ then
 else
     USERFULLNAME=""
     USEREMAIL=""
-    GPGPUBKEY=""
-    USEONEPASSWORDAGENT=""
 fi
 
 ohai "Change config to current user $USER"
@@ -222,41 +217,13 @@ then
 fi
 sed -i -- "s/USEREMAIL/$USEREMAIL/" home-manager/modules/git.nix
 
-if ! [[ -n $GPGPUBKEY ]]
-then
-    ohai "Enter you gpg public key:"
-    read GPGPUBKEY
-fi
-if ! [[ $GPGPUBKEY ]]
-then
-    sed -i -- "s/SIGNINGKEY//" home-manager/modules/git.nix;
-else
-    sed -i -- "s/SIGNINGKEY/$GPGPUBKEY/" home-manager/modules/git.nix;
-fi
-
-if ! [[ -n $USEONEPASSWORDAGENT ]]
-then
-    ohai "Use 1Password 8 SSH agent? (y/n)"
-    read USEONEPASSWORDAGENT
-fi
-if [[ $USEONEPASSWORDAGENT =~ ^[Yy]$ ]]
-then
-    ONEPASSWORD_AGENT='identityAgent = "\"${config.home.homeDirectory}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock\"";'
-    ONEPASSWORD_AGENT=$(printf '%s\n' "$ONEPASSWORD_AGENT" | sed -e 's/[\/&]/\\&/g')
-    sed -i -- "s/1PASSWORD_SSH_AGENT_CONFIG/$ONEPASSWORD_AGENT/" home-manager/modules/ssh.nix
-else
-    sed -i -- "s/1PASSWORD_SSH_AGENT_CONFIG//" home-manager/modules/ssh.nix
-fi
-
 echo "USERFULLNAME=\"$USERFULLNAME\"" > $CONFIG
 echo "USEREMAIL=\"$USEREMAIL\"" >> $CONFIG
-echo "GPGPUBKEY=\"$GPGPUBKEY\"" >> $CONFIG
-echo "USEONEPASSWORDAGENT=\"$USEONEPASSWORDAGENT\"" >> $CONFIG
 
 if ! [[ -x "$(command -v nix-env)" ]]
 then
     ohai "Installing nix. Answer always y."
-    sh <(curl -L https://releases.nixos.org/nix/nix-2.9.1/install)
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 fi
 if ! [[ -x "$(command -v nix-env)" ]]
 then
@@ -294,58 +261,6 @@ home-manager switch --flake .#rlmbp2022
 
 cp darwin-configuration.nix /Users/$USER/.nixpkgs/
 darwin-rebuild switch
-
-if ! [ -d "/etc/local/postgres/data" ]
-then
-    execute_sudo "${MKDIR[@]}" "/etc/local/postgres/data"
-    execute_sudo "${CHOWN[@]}" "-R" "${USER}:${GROUP}" "/etc/local/postgres"
-    initdb /etc/local/postgres/data
-fi
-
-if ! [ -d "/etc/local/redis" ]
-then
-    execute_sudo "${MKDIR[@]}" "/etc/local/redis/db"
-    execute_sudo "${CHOWN[@]}" "-R" "${USER}:${GROUP}" "/etc/local/redis"
-    cp config/redis.conf /etc/local/redis/
-fi
-
-if ! [ -d "/etc/local/fakes3/data" ]
-then
-    execute_sudo "${MKDIR[@]}" "/etc/local/fakes3/data"
-    execute_sudo "${CHOWN[@]}" "-R" "${USER}:${GROUP}" "/etc/local/fakes3/data"
-    gem install webrick
-    gem install fakes3
-fi
-
-if ! [ -d "/etc/local/nginx" ]
-then
-    execute_sudo "${MKDIR[@]}" "/etc/local/nginx/servers"
-    execute_sudo "${MKDIR[@]}" "/etc/local/nginx/logs"
-    execute_sudo "${MKDIR[@]}" "/var/cache/nginx/"
-    execute_sudo "${MKDIR[@]}" "/var/log/nginx/"
-    execute_sudo "${CHOWN[@]}" "-R" "${USER}:${GROUP}" "/etc/local/nginx"
-    cp config/nginx.conf /etc/local/nginx/
-    cp config/mime.types /etc/local/nginx/
-fi
-
-if ! [[ -x "$(command -v watch_gha_runs)" ]]
-then
-    ohai "Installing watch_gha_runs."
-    execute "pipx install git+https://github.com/nedbat/watchgha"
-    cp config/netrc "/Users/$USER/.netrc"
-fi
-
-if ! [[ -x "$(command -v fullrelease)" ]]
-then
-    ohai "Installing zest.releaser."
-    execute "pipx install zest.releaser"
-fi
-
-if ! [[ -x "$(command -v ruff)" ]]
-then
-    ohai "Installing ruff."
-    execute "pipx install ruff"
-fi
 
 ohai "Link gitconfig to HOME"
 ln -s ~/.config/git/config ~/.gitconfig

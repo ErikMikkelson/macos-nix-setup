@@ -9,7 +9,7 @@
   # You can update Home Manager without changing this value. See
   # the Home Manager release notes for a list of state version
   # changes in each release.
-  # home.stateVersion = "20.09";
+  home.stateVersion = "24.05";
 
   # http://czyzykowski.com/posts/gnupg-nix-osx.html
   # adds file to `~/.nix-profile/Applications/pinentry-mac.app/Contents/MacOS/pinentry-mac`
@@ -17,9 +17,6 @@
     pinentry_mac
 
     nodejs_20
-
-    # https://github.com/NixOS/nixpkgs/blob/master/pkgs/data/fonts/nerdfonts/default.nix
-    # nerdfonts
   ];
 
   # TODO
@@ -31,14 +28,6 @@
   # nixpkgs.config.allowUnfree = true;
   nixpkgs.config.packageOverrides = pkgs:
     {
-      python312 = pkgs.python312.overrideAttrs (attrs:
-        pkgs.lib.attrsets.recursiveUpdate attrs { meta.priority = 30; });
-      python310 = pkgs.python310.overrideAttrs (attrs:
-        pkgs.lib.attrsets.recursiveUpdate attrs { meta.priority = 50; });
-      python39 = pkgs.python39.overrideAttrs (attrs:
-        pkgs.lib.attrsets.recursiveUpdate attrs { meta.priority = 70; });
-      python38 = pkgs.python38.overrideAttrs (attrs:
-        pkgs.lib.attrsets.recursiveUpdate attrs { meta.priority = 100; });
     };
 
 }

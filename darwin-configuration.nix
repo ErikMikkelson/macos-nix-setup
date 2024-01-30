@@ -5,10 +5,7 @@
   # $ nix-env -qaP | grep wget
   environment.systemPackages =
     [
-        pkgs.vim
-        pkgs.nginx
-        pkgs.postgresql_14
-        pkgs.redis
+
     ];
 
   # Use a custom configuration.nix location.
@@ -17,42 +14,6 @@
 
   # Auto upgrade nix package and the daemon service.
   services.nix-daemon.enable = true;
-
-  launchd.daemons.nginx = {
-    command = "${pkgs.nginx}/bin/nginx -p /etc/local/nginx/tmp -c /etc/local/nginx/nginx.conf -e /etc/local/nginx/logs/error.log";
-    path = [pkgs.nginx];
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-      UserName = "root";
-    };
-  };
-
-  launchd.user.agents.postgresql_14 = {
-    command = "${pkgs.postgresql_14}/bin/postgres -D /etc/local/postgres/data";
-    path = [pkgs.postgresql_14];
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-    };
-  };
-
-  launchd.user.agents.redis = {
-    command = "${pkgs.redis}/bin/redis-server /etc/local/redis/redis.conf";
-    path = [pkgs.redis];
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-    };
-  };
-
-  launchd.user.agents.fakes3 = {
-    command = "$HOME/.gem/ruby/3.1.0/bin/fakes3 -r /etc/local/fakes3/data -p 9000 --license 5905935126";
-    serviceConfig = {
-      KeepAlive = true;
-      RunAtLoad = true;
-    };
-  };
 
   # Create /etc/bashrc that loads the nix-darwin environment.
   programs.zsh.enable = true;  # default shell on catalina
